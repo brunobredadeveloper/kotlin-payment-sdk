@@ -37,8 +37,10 @@ class PaymentViewModel : ViewModel() {
  private fun execute(client: PaymentClient, request: PaymentRequest) {
   state.value = DemoState(true, "Processando…", request.idempotencyKey,"loading")
   job = viewModelScope.launch {
-   val started=System.nanoTime()
+   var started=System.nanoTime()
    try {
+    delay(1400) // visible preparation in the sample; excluded from gateway latency
+    started=System.nanoTime()
     val result=client.pay(request)
     val message = when(result) {
      is PaymentResult.Approved -> "Aprovado · ${result.receipt.amountInCents} centavos · ${result.receipt.transactionId}"
