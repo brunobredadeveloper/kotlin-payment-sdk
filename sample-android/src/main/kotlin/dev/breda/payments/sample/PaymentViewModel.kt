@@ -24,7 +24,7 @@ class PaymentViewModel : ViewModel() {
  fun pay(raw: String, mode: DemoMode) {
   if (state.value.busy) return
   val cents = runCatching { BigDecimal(raw.trim().replace(',', '.')).movePointRight(2).longValueExact() }.getOrNull()
-  if (cents == null || cents <= 0) { state.value = state.value.copy(message = "Informe um valor positivo, com até duas casas decimais."); return }
+  if (cents == null || cents <= 0) { state.value = DemoState(message = "Informe um valor positivo, com até duas casas decimais.",status="error"); return }
   val scenario = when(mode) { DemoMode.DECLINE -> SimulationScenario.DECLINE; DemoMode.UNAVAILABLE -> SimulationScenario.UNAVAILABLE; else -> SimulationScenario.APPROVE }
   val client = PaymentClient(SimulatedPaymentGateway(scenario, if(mode == DemoMode.TIMEOUT) timeoutMillis+1500 else latencyMillis), timeoutMillis = timeoutMillis)
   val request = PaymentRequest(cents, UUID.randomUUID().toString())
