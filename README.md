@@ -1,71 +1,36 @@
-# Kotlin Payment SDK
+# Payment Integration Lab
 
-A fictional payment SDK portfolio project by **Bruno Breda**, with a platform-independent Kotlin library and a Jetpack Compose Android integration sample.
+Versão 0.2: experiência Android com múltiplos fluxos, autenticação opcional e identidade visual própria. Pagamentos são fictícios.
 
-## Why this project
-Demonstrate public API design, typed payment outcomes, structured concurrency and explicit treatment of payment uncertainty. There are no real payments or proprietary integrations.
+## Fluxos disponíveis
 
-## Quick start
-```kotlin
-val client = PaymentClient(SimulatedPaymentGateway())
-val request = PaymentRequest(amountInCents = 2590, idempotencyKey = "order-123")
-val result = client.pay(request)
-when (result) {
-    is PaymentResult.Approved -> println(result.receipt.transactionId)
-    is PaymentResult.Declined -> println(result.reason)
-    PaymentResult.OutcomeUnknown -> println("Reconcile using the same request key")
-    else -> println(result)
-}
-```
+Sample Android com identidade escura e violeta: overview, seleção de cenários, trace de resultado, inspector de eventos, controles de runtime e conta.
 
-Money is BRL integer cents. Retain a client instance across retries. Retain the same key for the same logical payment; a different key means a different payment.
+## Engenharia demonstrada
 
-## Modules
-| Module | Responsibility |
-| --- | --- |
-| `sdk` | Public contracts, PaymentClient, session idempotency and deterministic simulator |
-| `sample-android` | Amount input, four scenarios, cancellation and exact request replay |
+O SDK continua Kotlin puro, sem Firebase ou Android. O sample permite configurar latência/deadline, aprovação, recusa, erro, timeout, cancelamento, replay de chave e conflito de payload. Eventos ficam em memória durante a sessão; o sample não é um servidor de pagamentos.
 
-## Build and test
-JDK 17 is required. Core builds do not require an Android SDK:
-```sh
-./gradlew :sdk:test :sdk:publishToMavenLocal
-```
-The Maven Local coordinates are `dev.breda:kotlin-payment-sdk:0.1.0`. No artifact has been published to Maven Central.
+| Aplicativo Firebase | Package Android |
+|---|---|
+| Payment Integration Lab | `dev.breda.payments.sample` |
 
-For the Android sample, install Android SDK 35 and open with Android Studio. Add `includeAndroid=true` to your local Gradle user properties or run:
-```sh
-./gradlew -PincludeAndroid=true :sample-android:lintDebug :sample-android:assembleDebug
-```
-Use `gradlew.bat` on Windows. Device minimum: API 26. Android Studio must sync with `includeAndroid=true` to display the sample module.
+## Autenticação Firebase
 
-## Behavior contract
-| Situation | Result |
-| --- | --- |
-| Positive amount and approved simulator | Receipt with transaction ID and exact cents |
-| Declined simulator | Typed decline reason |
-| Same key and same payload | Replay stored terminal result |
-| Same key and different payload | IdempotencyConflict |
-| Nonpositive amount / blank or oversized key | InvalidRequest, gateway not invoked |
-| Gateway execution exceeds timeout | OutcomeUnknown, cached for exact retries |
-| Caller cancels coroutine | Cancellation propagates; no cached terminal result |
-| Gateway throws an ordinary exception | OutcomeUnknown; financial outcome cannot be inferred |
-| Session cache reaches its limit | New keys rejected; old keys remain replayable |
+1. Crie um projeto no Firebase Console e habilite **Authentication → Sign-in method → Email/Password**. Não é necessário habilitar login anônimo.
+2. Registre o aplicativo Android usando o package da tabela abaixo. Baixe seu `google-services.json`.
+3. No GitHub deste repositório, crie o secret de Actions **FIREBASE_CONFIG_JSON** com o JSON inteiro do aplicativo correspondente. O script CI valida o package e gera um asset de configuração; o arquivo pessoal não é versionado.
+4. Execute a esteira novamente para gerar um APK configurado. Para desenvolvimento local: `FIREBASE_CONFIG_JSON="$(cat /caminho/google-services.json)" python3 scripts/configure_firebase.py`.
+5. Crie conta no aplicativo, saia, entre novamente, envie recuperação de senha e verificação de e-mail. Firebase restaura a sessão. Senhas não são salvas pelo aplicativo.
 
-A payment timeout or cancellation of the coroutine is not proof that a real payment was cancelled. Remote reconciliation and durable server idempotency are required for a real provider. [ADR 0001](docs/adr/0001-session-idempotency.md) records these tradeoffs.
+Sem configuração, o APK oferece **demonstração local** explicitamente identificada. Ela não autentica no Firebase. Autenticação real, entrega de e-mails e isolamento Firestore exigem validar com seu projeto. Os dados locais são separados pelo hash SHA-256 do UID; isso é organização por conta, não criptografia de dados em repouso. Firebase Auth identifica o usuário, mas não transforma simuladores de negócio em uma API de pagamentos autorizada.
 
-## Demo walkthrough
-1. Approve `25,90` and observe the receipt.
-2. Repeat the same request and observe the same transaction ID.
-3. Start a new payment in Decline or Unavailable mode.
-4. Start Timeout mode and observe OutcomeUnknown.
-5. Cancel an in-flight wait; repeat the same request to observe cancellation semantics in the simulator.
+## Experiência e animação
 
-## Portfolio roadmap
-- Persistent request store and provider status reconciliation.
-- HTTP fake backend with durable idempotency and contract tests.
-- Android UI and accessibility tests; device screenshots and demo recording.
-- Binary API compatibility checks and release signing for a public package.
+Onboarding, splash, formulários de login/cadastro/recuperação, navegação com transições, feedback de carregamento/sucesso/erro via Lottie e perfil. As animações geométricas em `src/main/assets/motion_*.json` foram criadas para este projeto; não dependem de downloads em tempo de execução. Layout Compose com rolagem, estados vazios e componentes Material 3. Testes visuais e acessibilidade no aparelho ainda são necessários.
 
-## Validation
-Core compiled using Kotlin 2.1.20 with Coroutines 1.10.1; **12 JUnit tests passed** using the JUnit Platform runner. See `docs/validation.md`. Gradle `:sdk:test` and `:sdk:publishToMavenLocal` also completed successfully. The Android sample has not been compiled or device-tested. GitHub Actions defines independent core and Android jobs.
+## Build e validação
+
+A esteira `.github/workflows/ci.yml` executa testes de domínio e/ou SDK, testes de isolamento de sessão, Android Lint e montagem de APK debug. Em **Actions → Tests and APK → Artifacts**, baixe o ZIP de APK e extraia o `.apk`. A chave debug é preservada por cache quando disponível; se o cache for perdido, poderá ser necessário desinstalar a versão anterior. Esse APK é para demonstração, sem publicação de release.
+
+Veja `docs/advanced-experience.md` para o roteiro manual. Testes automatizados de núcleo não substituem teste de navegação e integração Firebase em um celular.
+

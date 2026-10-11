@@ -1,1 +1,1 @@
-Kotlin payment SDK with typed outcomes, session idempotency, coroutine cancellation, deterministic simulator and Compose demo.
+Sample Android com identidade escura e violeta: overview, seleção de cenários, trace de resultado, inspector de eventos, controles de runtime e conta.
