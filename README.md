@@ -1,46 +1,61 @@
-# Payment Integration Lab
+# Kotlin Payment SDK · Integration Lab
 
-Versão 0.3: experiência Android com múltiplos fluxos, autenticação opcional e identidade visual própria. Pagamentos são fictícios.
+**SDK Kotlin independente de Android, acompanhado de um laboratório visual de integração.**
 
-## Identidade e experiência 0.3
+Projeto de **Bruno Breda · breda_dev**. Separar um protocolo de pagamento simulado da interface Android e tornar os cenários de falha reproduzíveis para quem integra um SDK.
 
-Ícone adaptativo compartilhado **breda_dev** nos quatro apps. Splash nativo Android seguido de abertura Lottie contextual por 3,2 segundos (no lançamento, sem repetir na rotação). Formulários com teclado adequado, mostrar/ocultar senha e navegação login/cadastro/recuperação. Estados de operação ocupam uma tela própria: preparação/processamento, sucesso e erro, com animações grandes e ações adequadas ao resultado. A demo deixa os estados rápidos visíveis; isso não altera o contrato do núcleo de pagamentos.
+**Plataforma:** Kotlin/JVM + sample Android · Compose  
+**Estado:** implementação de portfólio em evolução; esteira aprovada na execução referenciada.
 
-As esteiras incluem uma jornada instrumentada em emulador: splash, login, cadastro/recuperação, modo local, operação, sucesso/erro, histórico e saída. Também verificam que Lottie renderiza pixels e muda de frame. Capturas e relatórios ficam no artifact `*-ux-evidence`. As capturas usam frame fixo para comparação; as animações permanecem ativas nos APKs normais.
+[Fluxos e demonstração](docs/fluxos.md) · [Engenharia](docs/engenharia.md) · [Builds e evidências](docs/evidencias.md) · [Portfólio completo](https://github.com/brunobredadeveloper/breda-park-wash/blob/main/docs/portfolio-breda-dev.md)
 
-## Fluxos disponíveis
+## O que você pode avaliar
 
-Sample Android com identidade escura e violeta: overview, seleção de cenários, trace de resultado, inspector de eventos, controles de runtime e conta.
+- SDK Kotlin puro com contratos tipados e gateway substituível.
+- Aprovação, recusa, indisponibilidade, timeout, cancelamento e conflito de idempotência.
+- Sample Android com cenários, inspeção de eventos e configuração de latência/deadline.
+- Autenticação opcional no sample, sem dependência de Firebase no SDK.
 
-## Engenharia demonstrada
+## Telas reais
 
-O SDK continua Kotlin puro, sem Firebase ou Android. O sample permite configurar latência/deadline, aprovação, recusa, erro, timeout, cancelamento, replay de chave e conflito de payload. Eventos ficam em memória durante a sessão; o sample não é um servidor de pagamentos.
+Capturas do aplicativo executado em emulador Android, recuperadas dos artefatos da esteira. Não são mockups nem fotografias de um aparelho físico. A origem e os limites estão em [evidências](docs/evidencias.md).
 
-| Aplicativo Firebase | Package Android |
-|---|---|
-| Payment Integration Lab | `dev.breda.payments.sample` |
+<img src="docs/imagens/03-home.png" alt="Kotlin Payment SDK · Integration Lab — Painel inicial" width="260" />
+<img src="docs/imagens/05-success.png" alt="Kotlin Payment SDK · Integration Lab — Resultado de sucesso" width="260" />
 
-## Autenticação Firebase
+## Fluxo principal
 
-1. Crie um projeto no Firebase Console e habilite **Authentication → Sign-in method → Email/Password**. Não é necessário habilitar login anônimo.
-2. Registre o aplicativo Android usando o package da tabela abaixo. Baixe seu `google-services.json`.
-3. No GitHub deste repositório, crie o secret de Actions **FIREBASE_CONFIG_JSON** com o JSON inteiro do aplicativo correspondente. O script CI valida o package e gera um asset de configuração; o arquivo pessoal não é versionado.
-4. Execute a esteira novamente para gerar um APK configurado. Para desenvolvimento local: `FIREBASE_CONFIG_JSON="$(cat /caminho/google-services.json)" python3 scripts/configure_firebase.py`.
-5. Crie conta no aplicativo, saia, entre novamente, envie recuperação de senha e verificação de e-mail. Firebase restaura a sessão. Senhas não são salvas pelo aplicativo.
+1. Abra o sample em modo local e execute um cenário aprovado.
+2. Repita a chave mantendo o payload; observe o replay.
+3. Reutilize a chave com valor diferente; observe o conflito.
+4. Reduza o deadline em relação à latência para obter resultado desconhecido.
+5. Compare os eventos e explique por que timeout não comprova recusa.
 
-Sem configuração, o APK oferece **demonstração local** explicitamente identificada. Ela não autentica no Firebase. Autenticação real, entrega de e-mails e isolamento Firestore exigem validar com seu projeto. Os dados locais são separados pelo hash SHA-256 do UID; isso é organização por conta, não criptografia de dados em repouso. Firebase Auth identifica o usuário, mas não transforma simuladores de negócio em uma API de pagamentos autorizada.
+## Executar e validar
 
-## Experiência e animação
+JDK 17. Para o sample: Android SDK 35 e Android 8+. O módulo Android só é incluído com -PincludeAndroid=true.
 
-Onboarding, splash, formulários de login/cadastro/recuperação, navegação com transições, feedback de carregamento/sucesso/erro via Lottie e perfil. As animações geométricas em `src/main/assets/motion_*.json` foram criadas para este projeto; não dependem de downloads em tempo de execução. Layout Compose com rolagem, estados vazios e componentes Material 3. Testes visuais e acessibilidade no aparelho ainda são necessários.
+```sh
+./gradlew :sdk:test :sdk:publishToMavenLocal
+./gradlew -PincludeAndroid=true :sample-android:testDebugUnitTest :sample-android:lintDebug :sample-android:assembleDebug
+```
 
-## Build e validação
+Configuração, Firebase quando aplicável, assinatura e comandos adicionais: [referência técnica](docs/referencia-tecnica.md).
 
-A esteira `.github/workflows/ci.yml` executa testes de domínio e/ou SDK, testes de isolamento de sessão, Android Lint e montagem de APK debug. Em **Actions → Tests and APK → Artifacts**, baixe o ZIP de APK e extraia o `.apk`. A chave debug é preservada por cache quando disponível; se o cache for perdido, poderá ser necessário desinstalar a versão anterior. Esse APK é para demonstração, sem publicação de release.
+[Abrir a execução verificada no GitHub Actions](https://github.com/brunobredadeveloper/kotlin-payment-sdk/actions/runs/38172931037). A conclusão dessa execução é **success**; consulte os artefatos e a revisão de código em [evidências](docs/evidencias.md).
 
-Veja `docs/advanced-experience.md` para o roteiro manual. Testes automatizados de núcleo não substituem teste de navegação e integração Firebase em um celular.
+## Limites do produto
 
+Não é um gateway de produção nem SDK certificado de adquirência. A idempotência da sessão não substitui garantia remota. Sem publicação declarada no Maven Central; publishToMavenLocal é validação local.
 
-## Clean Code, MVVM e SOLID
+## Para quem revisa o portfólio
 
-ViewModels recebem ports por construtor e a UI observa estados. Casos de uso, adapters e injeção manual estão descritos em [Arquitetura e decisões](docs/architecture.md), com os contratos e os testes correspondentes.
+Equipes de SDKs, pagamentos e Android que precisam avaliar contratos, concorrência e resultados incertos. As [decisões de engenharia](docs/engenharia.md) conectam responsabilidades, arquivos e testes. O [roteiro funcional](docs/fluxos.md) ajuda a avaliar comportamento, falhas e preservação de dados. Funcionalidade planejada não é apresentada como implementada.
+
+## Próximos passos
+
+- Validar os percursos no dispositivo real e registrar os resultados.
+- Revisar acessibilidade, interrupções e falhas de armazenamento/rede aplicáveis.
+- Concluir requisitos de distribuição, suporte e segurança antes de uso comercial.
+
+Código, mídias e dependências mantêm seus respectivos termos. Consulte os créditos e os avisos existentes no repositório.
